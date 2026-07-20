@@ -29,9 +29,9 @@ APPLICATION_ID=""
 APPLICATION_NAME=""
 FLUENTBIT_ENDPOINT=""
 INSTALL_FLUENTBIT=false
-HCMP_METRICS_HOST="sit.hcmp.jio.com"
+HCMP_METRICS_HOST="sitazure.hcmp.jio.com"
 HCMP_METRICS_PORT="443"
-HCMP_METRICS_URI="/apm/636/v1/metrics"
+HCMP_METRICS_URI="/metrics"
 PULL_SECRET_NAME=""
 NEXUS_USERNAME=""
 NEXUS_PASSWORD=""
@@ -72,12 +72,12 @@ Optional:
                         to the in-cluster service URL if omitted.
   --hcmp-metrics-host HOST
                         HCMP metrics host for Fluent Bit output
-                        (default: sit.hcmp.jio.com)
+                        (default: sitazure.hcmp.jio.com)
   --hcmp-metrics-port PORT
                         HCMP metrics port for Fluent Bit output (default: 443)
   --hcmp-metrics-uri URI
                         HCMP metrics path for Fluent Bit output
-                        (default: /apm/636/v1/metrics)
+                        (default: /metrics)
   --pull-secret-name PULL_SECRET_NAME
                         Nexus image pull secret name; when omitted, no Secret or
                         imagePullSecrets are applied (use cluster default pull creds)

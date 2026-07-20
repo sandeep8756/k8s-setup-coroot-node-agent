@@ -31,7 +31,7 @@ Install the **APM observability stack** into the `apm` namespace on a Kubernetes
 1. **Coroot cluster agent** watches Kubernetes API resources and emits cluster-level metrics.
 2. **Coroot node agent** runs on every node (privileged, `hostPID`) and collects container metrics for workloads matching the allowlist regex.
 3. **Prometheus** accepts remote write from both agents, applies relabel rules, and forwards selected metrics to Fluent Bit with `technologyCategoryId` and `CloudXP_CustomerID` labels.
-4. **Fluent Bit** *(optional, `--install-fluentbit`)* receives Prometheus remote_write on port `9882` and forwards metrics to `https://sit.hcmp.jio.com` with TLS certificate verification disabled (internal CA).
+4. **Fluent Bit** *(optional, `--install-fluentbit`)* receives Prometheus remote_write on port `9882` and forwards metrics to `https://sitazure.hcmp.jio.com/metrics` with TLS certificate verification disabled (internal CA).
 
 ## Folder contents
 
@@ -145,10 +145,10 @@ Show inline help:
 
 | Option | Description |
 |--------|-------------|
-| `--install-fluentbit` | Deploy Fluent Bit in `apm`; receives Prometheus remote_write on `:9882` and forwards to HCMP (`sit.hcmp.jio.com` by default) with `tls.verify: off` |
-| `--hcmp-metrics-host` | HCMP metrics hostname for Fluent Bit output (default: `sit.hcmp.jio.com`) |
+| `--install-fluentbit` | Deploy Fluent Bit in `apm`; receives Prometheus remote_write on `:9882` and forwards to HCMP (`sitazure.hcmp.jio.com/metrics` by default) with `tls.verify: off` |
+| `--hcmp-metrics-host` | HCMP metrics hostname for Fluent Bit output (default: `sitazure.hcmp.jio.com`) |
 | `--hcmp-metrics-port` | HCMP metrics port for Fluent Bit output (default: `443`) |
-| `--hcmp-metrics-uri` | HCMP metrics path for Fluent Bit output (default: `/apm/636/v1/metrics`) |
+| `--hcmp-metrics-uri` | HCMP metrics path for Fluent Bit output (default: `/metrics`) |
 | `--dry-run` | Print rendered YAML to stdout; do not call `kubectl apply` |
 | `--kubeconfig PATH` | Path to kubeconfig file (overrides `KUBECONFIG` env var) |
 | `--context CONTEXT` | kubectl context to use |
