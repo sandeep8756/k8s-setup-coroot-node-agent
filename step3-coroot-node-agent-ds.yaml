@@ -37,7 +37,7 @@ spec:
         - name: METRICS_TTL
           value: 2d
         - name: METRICS_ENDPOINT
-          value: http://prometheus.coroot.svc.cluster.local:9090/api/v1/write
+          value: http://prometheus.apm.svc.cluster.local:9090/api/v1/write
         - name: INSTANCE_TYPE
           value: __K8S_CLUSTER_NAME__
         - name: HOSTNAME_OVERRIDE

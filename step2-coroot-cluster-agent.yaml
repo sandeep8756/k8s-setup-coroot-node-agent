@@ -25,7 +25,7 @@ spec:
           securityContext:
             privileged: true
           args:
-            - "--metrics-endpoint=http://prometheus.coroot.svc.cluster.local:9090/api/v1/write"
+            - "--metrics-endpoint=http://prometheus.apm.svc.cluster.local:9090/api/v1/write"
             - "--metrics-scrape-interval=15s"
             - "--metrics-wal-dir=/data"
           volumeMounts:
