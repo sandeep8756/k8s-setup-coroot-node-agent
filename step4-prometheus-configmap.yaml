@@ -36,6 +36,14 @@ data:
             target_label: CloudXP_CustomerID
             replacement: "__CloudXP_CustomerID__"
             action: replace
+          - separator: ;
+            target_label: application_id
+            replacement: "__APPLICATION_ID__"
+            action: replace
+          - separator: ;
+            target_label: application_name
+            replacement: "__APPLICATION_NAME__"
+            action: replace
           - source_labels: [instance_type]
             target_label: cluster_name
             regex: (.+)

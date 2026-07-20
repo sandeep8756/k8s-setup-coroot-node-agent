@@ -25,6 +25,8 @@ K8S_CLUSTER_NAME=""
 CONTAINER_ALLOWLIST=""
 TECHNOLOGY_CATEGORY_ID=""
 CLOUDXP_CUSTOMER_ID=""
+APPLICATION_ID=""
+APPLICATION_NAME=""
 FLUENTBIT_ENDPOINT=""
 INSTALL_FLUENTBIT=false
 HCMP_METRICS_HOST="sit.hcmp.jio.com"
@@ -55,6 +57,10 @@ Required:
                         technologyCategoryId label forwarded to Fluent Bit
   --cloudxp-customer-id CLOUDXP_CUSTOMER_ID
                         CloudXP_CustomerID label forwarded to Fluent Bit
+  --application-id APPLICATION_ID
+                        Application ID label
+  --application-name APPLICATION_NAME
+                        Application name label
   --fluentbit-endpoint FLUENTBIT_ENDPOINT
                         Fluent Bit remote-write URL for Prometheus remote_write.
                         Required unless --install-fluentbit is set (defaults to
@@ -112,6 +118,14 @@ parse_args() {
                 ;;
             --cloudxp-customer-id)
                 CLOUDXP_CUSTOMER_ID="$2"
+                shift 2
+                ;;
+            --application-id)
+                APPLICATION_ID="$2"
+                shift 2
+                ;;
+            --application-name)
+                APPLICATION_NAME="$2"
                 shift 2
                 ;;
             --fluentbit-endpoint)
@@ -216,6 +230,8 @@ render_template() {
     content="${content//__CONTAINER_ALLOWLIST__/$CONTAINER_ALLOWLIST}"
     content="${content//__technologyCategoryId__/$TECHNOLOGY_CATEGORY_ID}"
     content="${content//__CloudXP_CustomerID__/$CLOUDXP_CUSTOMER_ID}"
+    content="${content//__APPLICATION_ID__/$APPLICATION_ID}"
+    content="${content//__APPLICATION_NAME__/$APPLICATION_NAME}"
     content="${content//__FLUENTBIT_ENDPOINT__/$FLUENTBIT_ENDPOINT}"
     content="${content//__HCMP_METRICS_HOST__/$HCMP_METRICS_HOST}"
     content="${content//__HCMP_METRICS_PORT__/$HCMP_METRICS_PORT}"
@@ -367,3 +383,4 @@ main() {
 }
 
 main "$@"
+
