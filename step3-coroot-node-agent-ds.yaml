@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: coroot-node-agent
+    app.kubernetes.io/instance: coroot
+    app.kubernetes.io/managed-by: kubectl
+    app.kubernetes.io/name: coroot
+    app.kubernetes.io/version: 1.25.3
+  name: coroot-node-agent
+  namespace: apm
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: coroot-node-agent
+  template:
+    metadata:
+      labels:
+        app: coroot-node-agent
+    spec:
+      containers:
+      - args:
+        - --cgroupfs-root=/host/sys/fs/cgroup
+        - --wal-dir=/data
+        env:
+        - name: CACHE_GC_INTERVAL
+          value: 90s
+        - name: CACHE_TTL
+          value: 90s
+        - name: CONTAINER_ALLOWLIST
+          value: __CONTAINER_ALLOWLIST__
+        - name: EBPF_PROFILING
+          value: "false"
+        - name: LISTEN
+          value: 0.0.0.0:8080
+        - name: METRICS_TTL
+          value: 2d
+        - name: METRICS_ENDPOINT
+          value: http://prometheus.apm.svc.cluster.local:9090/api/v1/write
+        - name: INSTANCE_TYPE
+          value: __K8S_CLUSTER_NAME__
+        - name: HOSTNAME_OVERRIDE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        image: __IMAGE_REPO__/coroot-node-agent-main:Release-1.33.1.1
+        imagePullPolicy: Always
+        name: coroot-node-agent
+        resources: {}
+        securityContext:
+          privileged: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /host/sys/fs/cgroup
+          name: cgroupfs
+          readOnly: true
+        - mountPath: /sys/kernel/tracing
+          name: tracefs
+        - mountPath: /sys/kernel/debug
+          name: debugfs
+        - mountPath: /tmp
+          name: tmp
+      imagePullSecrets:
+        - name: __PULL_SECRET_NAME__
+      dnsPolicy: ClusterFirst
+      hostPID: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - hostPath:
+          path: /sys/fs/cgroup
+          type: ""
+        name: cgroupfs
+      - hostPath:
+          path: /sys/kernel/tracing
+          type: ""
+        name: tracefs
+      - hostPath:
+          path: /sys/kernel/debug
+          type: ""
+        name: debugfs
+      - emptyDir: {}
+        name: tmp
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate

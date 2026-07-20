@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: apm
+  labels:
+    app: fluent-bit
+data:
+  fluent-bit.yaml: |
+    service:
+      flush: 1
+      log_level: info
+      daemon: false
+      storage.path: /fluent-bit-storage
+      storage.max_chunks_up: 256
+      storage.sync: normal
+      storage.checksum: false
+      storage.backlog.mem_limit: 64M
+
+    pipeline:
+      inputs:
+        # Receives Prometheus remote_write from the in-cluster Prometheus instance
+        - name: prometheus_remote_write
+          listen: 0.0.0.0
+          port: 9882
+          uri: /api/v1/metrics
+          tag: prometheus_rw
+          tag_from_uri: false
+
+      outputs:
+        # Forwards metrics to HCMP; tls.verify disabled for internal/SIT CA
+        - name: prometheus_remote_write
+          match: prometheus_rw
+          host: __HCMP_METRICS_HOST__
+          port: __HCMP_METRICS_PORT__
+          uri: __HCMP_METRICS_URI__
+          tls: on
+          tls.verify: false

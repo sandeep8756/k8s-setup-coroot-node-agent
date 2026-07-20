@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fluent-bit
+  namespace: apm
+  labels:
+    app: fluent-bit
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9882
+      targetPort: 9882
+      protocol: TCP
+      name: prom-rw
+  selector:
+    app: fluent-bit

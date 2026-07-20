@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coroot-cluster-agent
+  namespace: apm
+  labels:
+    app: coroot-cluster-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coroot-cluster-agent
+  template:
+    metadata:
+      labels:
+        app: coroot-cluster-agent
+    spec:
+      serviceAccountName: coroot-cluster-agent
+      imagePullSecrets:
+        - name: __PULL_SECRET_NAME__
+      containers:
+        - name: coroot-cluster-agent
+          image: __IMAGE_REPO__/coroot-cluster-agent-main:Release-1.30.1.5
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+          args:
+            - "--metrics-endpoint=http://prometheus.apm.svc.cluster.local:9090/api/v1/write"
+            - "--metrics-scrape-interval=15s"
+            - "--metrics-wal-dir=/data"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      securityContext: {}
+      volumes:
+        - name: data
+          emptyDir:
+            medium: Memory
