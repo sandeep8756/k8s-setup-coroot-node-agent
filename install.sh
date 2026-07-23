@@ -28,6 +28,7 @@ CLOUDXP_CUSTOMER_ID=""
 APPLICATION_ID=""
 APPLICATION_NAME=""
 FLUENTBIT_ENDPOINT=""
+JWT_TOKEN=""
 INSTALL_FLUENTBIT=false
 HCMP_METRICS_HOST="sitazure.hcmp.jio.com"
 HCMP_METRICS_PORT="443"
@@ -65,6 +66,8 @@ Required:
                         Fluent Bit remote-write URL for Prometheus remote_write.
                         Required unless --install-fluentbit is set (defaults to
                         http://fluent-bit.apm.svc.cluster.local:9882/api/v1/metrics)
+  --jwt-token JWT_TOKEN
+                        JWT Bearer token for Prometheus remote_write authentication
 
 Optional:
   --install-fluentbit   Deploy in-cluster Fluent Bit (receives from Prometheus,
@@ -132,6 +135,10 @@ parse_args() {
                 FLUENTBIT_ENDPOINT="$2"
                 shift 2
                 ;;
+            --jwt-token)
+                JWT_TOKEN="$2"
+                shift 2
+                ;;
             --install-fluentbit)
                 INSTALL_FLUENTBIT=true
                 shift
@@ -188,6 +195,7 @@ parse_args() {
     [[ -z "$CONTAINER_ALLOWLIST" ]] && missing+=("--container-allowlist")
     [[ -z "$TECHNOLOGY_CATEGORY_ID" ]] && missing+=("--technology-category-id")
     [[ -z "$CLOUDXP_CUSTOMER_ID" ]] && missing+=("--cloudxp-customer-id")
+    [[ -z "$JWT_TOKEN" ]] && missing+=("--jwt-token")
     if [[ ${#missing[@]} -gt 0 ]]; then
         die "Missing required option(s): ${missing[*]}"
     fi
@@ -233,6 +241,7 @@ render_template() {
     content="${content//__APPLICATION_ID__/$APPLICATION_ID}"
     content="${content//__APPLICATION_NAME__/$APPLICATION_NAME}"
     content="${content//__FLUENTBIT_ENDPOINT__/$FLUENTBIT_ENDPOINT}"
+    content="${content//__JWT_TOKEN__/$JWT_TOKEN}"
     content="${content//__HCMP_METRICS_HOST__/$HCMP_METRICS_HOST}"
     content="${content//__HCMP_METRICS_PORT__/$HCMP_METRICS_PORT}"
     content="${content//__HCMP_METRICS_URI__/$HCMP_METRICS_URI}"
