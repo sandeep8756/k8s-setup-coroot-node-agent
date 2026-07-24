@@ -74,10 +74,10 @@ chmod +x install.sh
   --container-allowlist '/k8s/(deeptrace|coroot)/.*' \
   --technology-category-id '12345' \
   --cloudxp-customer-id 'CUST-001' \
+  --application-id '12345' \
+  --application-name 'my-app' \
   --fluentbit-endpoint 'http://fluent-bit.apm.svc.cluster.local:9882/api/v1/metrics' \
-  --pull-secret-name nexus-pull-secret \
-  --nexus-username '<nexus-user>' \
-  --nexus-password '<nexus-password>'
+  --jwt-token '<JWT_TOKEN>'
 ```
 
 Install with in-cluster Fluent Bit (forwards to HCMP SIT):
@@ -90,9 +90,9 @@ Install with in-cluster Fluent Bit (forwards to HCMP SIT):
   --container-allowlist '/k8s/(deeptrace|coroot)/.*' \
   --technology-category-id '12345' \
   --cloudxp-customer-id 'CUST-001' \
-  --pull-secret-name nexus-pull-secret \
-  --nexus-username '<nexus-user>' \
-  --nexus-password '<nexus-password>'
+  --application-id '12345' \
+  --application-name 'my-app' \
+  --jwt-token '<JWT_TOKEN>'
 ```
 
 `--install-fluentbit` auto-sets `--fluentbit-endpoint` to `http://fluent-bit.apm.svc.cluster.local:9882/api/v1/metrics`. Override HCMP destination with `--hcmp-metrics-host`, `--hcmp-metrics-port`, and `--hcmp-metrics-uri` if needed.
@@ -119,7 +119,7 @@ Show inline help:
 | Step | File(s) | Resources created |
 |------|---------|-------------------|
 | 0 | *(script)* | Ensures namespace `apm` exists |
-| 1 | `step1-coroot-cluster-agent-rbac.yaml` | Docker registry pull Secret, ServiceAccount, ClusterRole, ClusterRoleBinding |
+| 1 | `step1-coroot-cluster-agent-rbac.yaml` | ServiceAccount, ClusterRole, ClusterRoleBinding (optional docker-registry Secret only if pull-secret flags are set) |
 | 2 | `step2-coroot-cluster-agent.yaml` | `coroot-cluster-agent` Deployment |
 | 3 | `step3-coroot-node-agent-ds.yaml` | `coroot-node-agent` DaemonSet |
 | 4 | `step5-fluent-bit-*.yaml` *(optional)* | Fluent Bit ConfigMap, Deployment, ClusterIP Service |
@@ -137,18 +137,21 @@ Show inline help:
 | `--technology-category-id` | Value for `technologyCategoryId` label on forwarded metrics | `12345` |
 | `--cloudxp-customer-id` | Value for `CloudXP_CustomerID` label on forwarded metrics | `CUST-001` |
 | `--fluentbit-endpoint` | Fluent Bit Prometheus remote-write URL (auto-set when `--install-fluentbit`) | `http://fluent-bit.apm.svc.cluster.local:9882/api/v1/metrics` |
-| `--pull-secret-name` | Name of the Kubernetes docker-registry Secret | `nexus-pull-secret` |
-| `--nexus-username` | Nexus registry username | — |
-| `--nexus-password` | Nexus registry password | — |
+| `--jwt-token` | JWT Bearer token for Fluent Bit HCMP remote_write authentication | — |
 
 ### Optional
 
 | Option | Description |
 |--------|-------------|
+| `--application-id` | Application ID label on forwarded metrics |
+| `--application-name` | Application name label on forwarded metrics |
 | `--install-fluentbit` | Deploy Fluent Bit in `apm`; receives Prometheus remote_write on `:9882` and forwards to HCMP (`sitazure.hcmp.jio.com/metrics` by default) with `tls.verify: off` |
 | `--hcmp-metrics-host` | HCMP metrics hostname for Fluent Bit output (default: `sitazure.hcmp.jio.com`) |
 | `--hcmp-metrics-port` | HCMP metrics port for Fluent Bit output (default: `443`) |
 | `--hcmp-metrics-uri` | HCMP metrics path for Fluent Bit output (default: `/metrics`) |
+| `--pull-secret-name` | Existing docker-registry Secret name for `imagePullSecrets` (omit to use cluster default pull creds) |
+| `--nexus-username` | Nexus username (only if creating/updating the pull Secret) |
+| `--nexus-password` | Nexus password (only if creating/updating the pull Secret) |
 | `--dry-run` | Print rendered YAML to stdout; do not call `kubectl apply` |
 | `--kubeconfig PATH` | Path to kubeconfig file (overrides `KUBECONFIG` env var) |
 | `--context CONTEXT` | kubectl context to use |
@@ -166,13 +169,16 @@ Show inline help:
 | `__technologyCategoryId__` | `--technology-category-id` |
 | `__CloudXP_CustomerID__` | `--cloudxp-customer-id` |
 | `__FLUENTBIT_ENDPOINT__` | `--fluentbit-endpoint` (or in-cluster default with `--install-fluentbit`) |
+| `__JWT_TOKEN__` | `--jwt-token` |
+| `__APPLICATION_ID__` | `--application-id` |
+| `__APPLICATION_NAME__` | `--application-name` |
 | `__HCMP_METRICS_HOST__` | `--hcmp-metrics-host` |
 | `__HCMP_METRICS_PORT__` | `--hcmp-metrics-port` |
 | `__HCMP_METRICS_URI__` | `--hcmp-metrics-uri` |
-| `__PULL_SECRET_NAME__` | `--pull-secret-name` |
-| `__NEXUS_USERNAME__` | `--nexus-username` |
-| `__NEXUS_PASSWORD__` | `--nexus-password` |
-| `__NEXUS_AUTH__` | Base64 of `username:password` (computed by script) |
+| `__PULL_SECRET_NAME__` | `--pull-secret-name` (optional) |
+| `__NEXUS_USERNAME__` | `--nexus-username` (optional) |
+| `__NEXUS_PASSWORD__` | `--nexus-password` (optional) |
+| `__NEXUS_AUTH__` | Base64 of `username:password` (computed by script when credentials are provided) |
 
 ## Deployed images
 
@@ -254,10 +260,10 @@ The node agent runs **privileged** with `hostPID: true` and mounts host cgroup, 
   --container-allowlist '/k8s/deeptrace/.*' \
   --technology-category-id '99001' \
   --cloudxp-customer-id 'CLOUDXP-42' \
+  --application-id '12345' \
+  --application-name 'my-app' \
   --fluentbit-endpoint 'http://fluent-bit.apm.svc.cluster.local:9882/api/v1/metrics' \
-  --pull-secret-name nexus-pull-secret \
-  --nexus-username "$NEXUS_USER" \
-  --nexus-password "$NEXUS_PASS"
+  --jwt-token "$JWT_TOKEN"
 ```
 
 ### Dry-run a single step's output
@@ -285,7 +291,7 @@ Deleting the namespace also removes the cluster-scoped binding subject reference
 | Symptom | Check |
 |---------|-------|
 | `Missing required option(s)` | Pass all required flags; run `./install.sh --help` |
-| Image pull errors (`ImagePullBackOff`) | Verify Nexus credentials, `--image-repo`, and that `__PULL_SECRET_NAME__` Secret exists in `apm` |
+| Image pull errors (`ImagePullBackOff`) | Verify `--image-repo` and cluster default pull credentials (or optionally pass `--pull-secret-name` if using a pre-created Secret) |
 | Node agent not collecting metrics | Confirm workload container names match `--container-allowlist` regex |
 | No metrics in Fluent Bit | Check Prometheus logs; verify `--fluentbit-endpoint` is reachable from the Prometheus pod (or pass `--install-fluentbit`) |
 | Fluent Bit TLS errors to HCMP | SIT uses an internal CA; the bundled config sets `tls.verify: false`. For production, mount the CA cert instead |

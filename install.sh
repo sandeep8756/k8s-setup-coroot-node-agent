@@ -82,12 +82,13 @@ Optional:
                         HCMP metrics path for Fluent Bit output
                         (default: /metrics)
   --pull-secret-name PULL_SECRET_NAME
-                        Nexus image pull secret name; when omitted, no Secret or
-                        imagePullSecrets are applied (use cluster default pull creds)
+                        Existing Kubernetes docker-registry Secret name to use for
+                        imagePullSecrets. When omitted, no imagePullSecrets are applied.
   --nexus-username NEXUS_USERNAME
-                        Nexus registry username (required with --pull-secret-name)
+                        Nexus registry username (optional; only needed to create/update
+                        the pull Secret when it does not already exist)
   --nexus-password NEXUS_PASSWORD
-                        Nexus registry password (required with --pull-secret-name)
+                        Nexus registry password (optional; only needed with --nexus-username)
   --dry-run             Print rendered YAML without calling kubectl
   --kubeconfig PATH     Path to kubeconfig (overrides KUBECONFIG env var)
   --context CONTEXT     kubectl context to use
@@ -209,13 +210,17 @@ parse_args() {
     fi
 
     if [[ -n "$PULL_SECRET_NAME" ]]; then
-        local secret_missing=()
-        [[ -z "$NEXUS_USERNAME" ]] && secret_missing+=("--nexus-username")
-        [[ -z "$NEXUS_PASSWORD" ]] && secret_missing+=("--nexus-password")
-        if [[ ${#secret_missing[@]} -gt 0 ]]; then
-            die "When --pull-secret-name is set, also pass: ${secret_missing[*]}"
+        # Credentials are optional: when provided, create/update the docker-registry Secret.
+        # When omitted, only imagePullSecrets are set (Secret must already exist in-cluster).
+        if [[ -n "$NEXUS_USERNAME" || -n "$NEXUS_PASSWORD" ]]; then
+            local secret_missing=()
+            [[ -z "$NEXUS_USERNAME" ]] && secret_missing+=("--nexus-username")
+            [[ -z "$NEXUS_PASSWORD" ]] && secret_missing+=("--nexus-password")
+            if [[ ${#secret_missing[@]} -gt 0 ]]; then
+                die "When creating a pull secret, also pass: ${secret_missing[*]}"
+            fi
+            NEXUS_AUTH=$(printf '%s:%s' "$NEXUS_USERNAME" "$NEXUS_PASSWORD" | base64)
         fi
-        NEXUS_AUTH=$(printf '%s:%s' "$NEXUS_USERNAME" "$NEXUS_PASSWORD" | base64)
     fi
 }
 
@@ -247,13 +252,45 @@ render_template() {
     content="${content//__HCMP_METRICS_URI__/$HCMP_METRICS_URI}"
     if [[ -n "$PULL_SECRET_NAME" ]]; then
         content="${content//__PULL_SECRET_NAME__/$PULL_SECRET_NAME}"
-        content="${content//__NEXUS_USERNAME__/$NEXUS_USERNAME}"
-        content="${content//__NEXUS_PASSWORD__/$NEXUS_PASSWORD}"
-        content="${content//__NEXUS_AUTH__/$NEXUS_AUTH}"
+        if [[ -n "$NEXUS_USERNAME" && -n "$NEXUS_PASSWORD" ]]; then
+            content="${content//__NEXUS_USERNAME__/$NEXUS_USERNAME}"
+            content="${content//__NEXUS_PASSWORD__/$NEXUS_PASSWORD}"
+            content="${content//__NEXUS_AUTH__/$NEXUS_AUTH}"
+        else
+            # Reference an existing pull secret; do not create/overwrite the Secret.
+            content=$(remove_docker_registry_secret "$content")
+        fi
     else
         content=$(remove_pull_secret_config "$content")
     fi
     printf '%s' "$content"
+}
+
+# Drop only the docker-registry Secret document; keep imagePullSecrets.
+remove_docker_registry_secret() {
+    local content="$1"
+    printf '%s' "$content" | awk '
+        function flush() {
+            if (nbuf == 0) return
+            if (!skip_doc) {
+                if (printed++) printf "---\n"
+                printf "%s", buf
+            }
+            buf = ""
+            nbuf = 0
+            skip_doc = 0
+        }
+        /^---$/ {
+            flush()
+            next
+        }
+        {
+            if ($0 ~ /^kind:[[:space:]]*Secret[[:space:]]*$/) skip_doc = 1
+            buf = buf $0 "\n"
+            nbuf++
+        }
+        END { flush() }
+    '
 }
 
 # Drop docker-registry Secret docs and imagePullSecrets when no pull secret is configured.
