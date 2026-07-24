@@ -67,7 +67,7 @@ Required:
                         Required unless --install-fluentbit is set (defaults to
                         http://fluent-bit.apm.svc.cluster.local:9882/api/v1/metrics)
   --jwt-token JWT_TOKEN
-                        JWT Bearer token for Prometheus remote_write authentication
+                        JWT Bearer token for Fluent Bit HCMP remote_write authentication
 
 Optional:
   --install-fluentbit   Deploy in-cluster Fluent Bit (receives from Prometheus,

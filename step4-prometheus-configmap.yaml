@@ -21,10 +21,6 @@ data:
     # Forward all metrics (including received remote write) to Fluent Bit
     remote_write:
       - url: __FLUENTBIT_ENDPOINT__
-        # JWT Bearer auth — replace __JWT_TOKEN__ with the actual token
-        authorization:
-          type: Bearer
-          credentials: __JWT_TOKEN__
         write_relabel_configs:
           # Forward all metrics
           - source_labels: [__name__]

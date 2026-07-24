@@ -34,5 +34,7 @@ data:
           host: __HCMP_METRICS_HOST__
           port: __HCMP_METRICS_PORT__
           uri: __HCMP_METRICS_URI__
+          # JWT Bearer auth — replace __JWT_TOKEN__ with the actual token
+          header: 'Authorization Bearer __JWT_TOKEN__'
           tls: on
           tls.verify: false
